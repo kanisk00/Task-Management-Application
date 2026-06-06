@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Task Manager</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    padding: 30px;
+  }
+
+  .app {
+    width: 500px;
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  h1 { text-align: center; }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  input, select {
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    outline: none;
+  }
+
+  input[type="text"] { flex: 1; }
+
+  button {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #38bdf8;
+    color: black;
+    font-weight: bold;
+  }
+
+  .filters {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+  }
+
+  .task {
+    background: #334155;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+  }
+
+  .done {
+    text-decoration: line-through;
+    opacity: 0.6;
+  }
+
+  .badge {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    width: fit-content;
+  }
+
+  .high { background: #ef4444; }
+  .medium { background: #f59e0b; }
+  .low { background: #22c55e; }
+
+  .actions button {
+    background: #ef4444;
+    color: white;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <h1>Task Manager</h1>
+
+  <div class="row">
+    <input id="text" type="text" placeholder="Task..." />
+    <select id="priority">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <input id="date" type="date" />
+    <button onclick="addTask()">Add</button>
+  </div>
+
+  <div class="row">
+    <input id="search" type="text" placeholder="Search tasks..." oninput="render()" />
+  </div>
+
+  <div class="filters">
+    <select id="filter" onchange="render()">
+      <option value="all">All</option>
+      <option value="active">Active</option>
+      <option value="completed">Completed</option>
+    </select>
+
+    <button onclick="clearAll()">Clear All</button>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+function save() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+function addTask() {
+  const text = document.getElementById("text").value.trim();
+  const priority = document.getElementById("priority").value;
+  const date = document.getElementById("date").value;
+
+  if (!text) return;
+
+  tasks.push({
+    text,
+    priority,
+    date,
+    done: false
+  });
+
+  document.getElementById("text").value = "";
+  save();
+  render();
+}
+
+function toggle(i) {
+  tasks[i].done = !tasks[i].done;
+  save();
+  render();
+}
+
+function remove(i) {
+  tasks.splice(i, 1);
+  save();
+  render();
+}
+
+function clearAll() {
+  tasks = [];
+  save();
+  render();
+}
+
+function render() {
+  const list = document.getElementById("list");
+  const filter = document.getElementById("filter").value;
+  const search = document.getElementById("search").value.toLowerCase();
+
+  list.innerHTML = "";
+
+  tasks
+    .filter(t => {
+      if (filter === "active") return !t.done;
+      if (filter === "completed") return t.done;
+      return true;
+    })
+    .filter(t => t.text.toLowerCase().includes(search))
+    .forEach((t, i) => {
+
+      const div = document.createElement("div");
+      div.className = "task";
+
+      div.innerHTML = `
+        <div class="left" onclick="toggle(${i})">
+          <div class="${t.done ? "done" : ""}">${t.text}</div>
+          <div class="badge ${t.priority}">${t.priority}</div>
+          <small>📅 ${t.date || "No date"}</small>
+        </div>
+
+        <div class="actions">
+          <button onclick="remove(${i})">X</button>
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+}
+
+render();
+</script>
+
+</body>
+</html>
